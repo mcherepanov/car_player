@@ -4,6 +4,7 @@ echo "<img src='images/kenwood.png' height='50'/><div id='state'></div>";
     <script>
         window.onload = setup();
         function getdata(command) {
+            console.log(command);
             xhr = new XMLHttpRequest();
             var query = new FormData();
             query.append("command", command);
@@ -11,34 +12,30 @@ echo "<img src='images/kenwood.png' height='50'/><div id='state'></div>";
             xhr.send(query);
             var answer = JSON.parse(xhr.responseText);
             //console.log(answer)
-            var temp_cpu = answer[answer.length - 2];
-            setDiv('temp_cpu', temp_cpu);
 
-            var picture = answer[answer.length - 1];
+            // температура процессора
+            setDiv('temp_cpu', answer.temp_cpu);
+            // картинка альбома
             var image = new Image();
-            image.src = 'data:image/jpg;base64,' + picture;
+            image.src = 'data:image/jpg;base64,' + answer.picture;
             image.height = '150';
             var div_image = document.getElementById('img');
             while (div_image.firstChild) div_image.removeChild(div_image.firstChild);
             div_image.appendChild(image);
 
-            var state = answer[0].split(':')[1];
-            setDiv('state', '<h3>Статус: ' + state + '</h3>');
+            // состояние плеера
+            setDiv('state', '<h3>Статус: ' + answer.State + '</h3>');
+            // сводная информация - артист, композиция и общее время
+            setDiv('artist_songtitle_time', answer.Artist + ': ' + answer.SongTitle + ' (' + answer.TotalTime + ' )');
+            // осталось до конца песни
+            setDiv('time_left', answer.TimeLeft);
+            // прогресс-бар
+            document.getElementById('progress').max = answer.TotalSec;
+            document.getElementById('progress').value = answer.CurrentSec;
+            //
+            document.getElementById('shuffle').checked = answer.shuffle === 'on' ? true : false;
+            document.getElementById('repeat').checked = answer.repeat === 'on' ? true : false;
 
-            var total_time = answer[6].split(':')[1] + ':' + answer[6].split(':')[2];
-            var artist_title = answer[3].split(':')[1] + ': ' + answer[4].split(':')[1];
-            setDiv('artist_title', artist_title + ' (' + total_time + ' )');
-
-            //var current_time = answer[9].split(':')[1] + ':' + answer[9].split(':')[2];
-            //setDiv('current_time', current_time);
-
-            var left_time = answer[7].split(':')[1] + ':' + answer[7].split(':')[2];
-            setDiv('left_time', left_time);
-
-            var total_sec = answer[8].split(':')[1];
-            var current_sec = answer[10].split(':')[1];
-            document.getElementById('progress').max = total_sec;
-            document.getElementById('progress').value = current_sec;
 
         }
         function setup() {
@@ -105,15 +102,15 @@ echo "<img src='images/kenwood.png' height='50'/><div id='state'></div>";
         }
     </style>
 <?php
-echo "<table border='1'>
+echo "<table border='0'>
 <tr>
-<td colspan='3'><div id='artist_title'></div></td><td rowspan='3'><div id='img'></div></td>
+<td colspan='3'><div id='artist_songtitle_time'></div></td><td rowspan='3'><div id='img'></div></td>
 </td>
 </tr>
 <tr>
 
 <td colspan='2'><progress id='progress'></progress></td>
-<td><div><div id='left_time'></td></div></td></tr>
+<td><div><div id='time_left'></td></div></td></tr>
 </tr>
 <tr>
 <td colspan='3'><input id='previous' type='image'src='images/previous.png' height='48' onclick='getdata(\"previous\");' />
@@ -127,8 +124,11 @@ $music_dir = '/media/music';
 $alboms = scandir($music_dir);
 array_shift($alboms);
 array_shift($alboms);
-echo "<tr><td>Папка</td></tr>
-<tr><td colspan='3'><select id='alboms' name='alboms'>";
+echo "<tr><td>Папка</td><td>&nbsp;&nbsp;Случайно<input id='shuffle' type='checkbox' onchange='getdata(\"shuffle-\" + this.checked)'/></td>
+<td>&nbsp;&nbsp;Повтор<input id='repeat' type='checkbox' onchange='getdata(\"repeat-\" + this.checked)'/></td>
+</tr>
+<tr><td colspan='3'><select id='alboms' name='alboms'>
+<option value='all'>Вся коллекция</option>";
 foreach ($alboms as $k => $row) {
     echo "<option>" . $row . "</option>";
 }
