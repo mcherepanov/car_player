@@ -9,7 +9,11 @@ if (!file_exists($setup_file)) {
 } else $setup = unserialize(file_get_contents($setup_file));
 $volume = "99";
 if (isset ($_POST) && ($_POST != '')) {
-    //file_put_contents('/tmp/command', $_POST['command']); // отладка
+    // отладка
+    ob_start();
+    var_dump($_POST);
+    file_put_contents('/tmp/commands', ob_get_clean());
+    // отладка
     if ($_POST['command'] == "next") {
         (`mocp -f`);
     }
@@ -50,7 +54,14 @@ if (isset ($_POST) && ($_POST != '')) {
         (`mocp -u r`);
         file_put_contents($setup_file, serialize($setup));
     }
-
+//======================================
+    if ($_POST['command'] == "poweroff") {
+        (`poweroff`);
+    }
+    if ($_POST['command'] == "reboot") {
+        (`reboot`);
+    }
+//======================================
 
     if ($_POST['command'] == "eject") {
         //(`mocp -s -c`); // пока скрипт не готов - не делать ничего
@@ -91,13 +102,7 @@ if (isset ($_POST) && ($_POST != '')) {
         }
         file_put_contents('/tmp/test/5_is_albom', $res);
     }
-//======================================
-    if ($_POST['command'] == "poweroff") {
-        (`poweroff`);
-    }
-    if ($_POST['command'] == "reboot") {
-        (`reboot`);
-    }
+    // -------------------------------------------
     if (strpos($_POST['command'], 'select_albom') !== false) {
         (`mocp -s`);
         if ($_POST['command'] == 'select_albom:all') $directory = $music_dir;

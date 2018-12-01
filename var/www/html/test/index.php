@@ -6,7 +6,7 @@ echo "<img src='images/kenwood.png' height='50'/><div id='state'></div>";
         function getdata(command) {
             if (typeof (command) !== 'undefined') console.log(command);
             xhr = new XMLHttpRequest();
-            var query = new FormData();
+            var query = new FormData('main_form');
             query.append("command", command);
             xhr.open("post", "answer.php", false);
             xhr.send(query);
@@ -36,25 +36,41 @@ echo "<img src='images/kenwood.png' height='50'/><div id='state'></div>";
             document.getElementById('shuffle').checked = answer.shuffle === 'on' ? true : false;
             document.getElementById('repeat').checked = answer.repeat === 'on' ? true : false;
 
-            if (typeof (answer.alboms) !== 'undefined'){
+            // альбомы
+            if (typeof (answer.alboms) !== 'undefined') {
                 //console.log(answer.alboms.length);
                 //console.log(answer.alboms);
                 //document.getElementById('subalboms').innerHTML() // дописать
                 var select = document.getElementById('subalboms');
+                // чистим старое
+                while (select.firstChild) select.removeChild(select.firstChild);
+                // вставим один элемент по умолчанию
+                var allAlboms = new Option('Все альбомы', 'all');
+                select.appendChild(allAlboms);
+                // добавление перечня альбомов
                 for (var i in answer.alboms) {
                     //console.log(answer.alboms[i])
-                    var arrayAlbom = answer.alboms[i].split('/')
+                    var arrayAlbom = answer.alboms[i].split('/');
                     var arrayLength = arrayAlbom.length;
-                    var albom = arrayAlbom[arrayLength - 1]
+                    var albom = arrayAlbom[arrayLength - 1];
                     console.log(albom);
                     var newOption = new Option(albom, albom);
                     select.appendChild(newOption);
                 }
             }
-
+            // конец альбомов
 
 
         }
+        function sendForm() {
+            console.log('отправка формы');
+            xhr = new XMLHttpRequest();
+            var oldForm = document.forms.main_form, query = new FormData(oldForm);
+            console.log(query);
+            xhr.open("post", "save_form.php", true);
+            xhr.send(query);
+        }
+
         function setup() {
             setInterval(getdata, 1000);
         }
@@ -122,7 +138,7 @@ echo "<img src='images/kenwood.png' height='50'/><div id='state'></div>";
         }
     </style>
 <?php
-echo "<table border='0'>
+echo "<form id='main_form' name='main_form'><table border='0'>
 <tr>
 <td colspan='3'><div id='artist_songtitle_time'></div></td><td rowspan='3'><div id='img'></div></td>
 </td>
@@ -144,23 +160,26 @@ $music_dir = '/media/music';
 $alboms = scandir($music_dir);
 array_shift($alboms);
 array_shift($alboms);
-echo "<tr><td>Папка</td><td>&nbsp;&nbsp;Случайно<input id='shuffle' type='checkbox' onchange='getdata(\"shuffle-\" + this.checked)'/></td>
+echo "<tr><td>Исполнитель</td><td>&nbsp;&nbsp;Случайно<input id='shuffle' type='checkbox' onchange='getdata(\"shuffle-\" + this.checked)'/></td>
 <td>&nbsp;&nbsp;Повтор<input id='repeat' type='checkbox' onchange='getdata(\"repeat-\" + this.checked)'/></td>
 </tr>
+
 <tr><td colspan='3'><select id='alboms' name='alboms' onchange='getdata(\"changedir:\" + this.value)'>
 <option value='all'>Вся коллекция</option>";
 foreach ($alboms as $k => $row) {
     echo "<option>" . $row . "</option>";
 }
 echo "</select>
-&nbsp;&nbsp;&nbsp;<input id='select_albom' type='button' value='Выбрать' onclick='selectAlbom();'></td>
+&nbsp;&nbsp;&nbsp;<input id='select_albom' type='button' value='Выбрать' onclick='selectAlbom();'>
+&nbsp;&nbsp;<input type='button' value='Отправка формы' onclick='sendForm();'></td>
 </tr>
 <tr>
 <td>
-<select id='subalboms' name='subalboms' onchange='getdata(\"changealbom:\" + this.value)'>
+<select id='subalboms' name='subalboms' onchange='getdata(\"select_albom:\" + this.value)'>
 <option value='all'>Все альбомы</option>
 </td>
 </tr>
+
 <tr><td>&nbsp;</td></tr>
 <tr><td>Температура процессора</td><td><div id='temp_cpu'></div></td></tr>
 <tr>
@@ -168,5 +187,5 @@ echo "</select>
 <td><input id='reboot' type='button' value='Перезагрузить' onclick='getdata(\"reboot\");'></td>
 <td><input id='poweroff' type='button' value='Выключить' onclick='getdata(\"poweroff\");'></td>
 </tr>
-</table>";
+</table></form>";
 
