@@ -4,6 +4,9 @@
 # распаковываем
 # пишем на карту
 dcfldd if=Armbian_5.65_Orangepizero_Debian_stretch_next.img of=/dev/sdc bs=1024; sync
+# после записи на компе карту не открывать и не подмонтировать - вынуть сразу после записи!
+# вставлять уже сразу в плату SoC
+
 # ставим пакеты
 sudo su
 apt-get install nginx php-fpm mc moc moc-ffmpeg-plugin git curl
@@ -63,6 +66,80 @@ nano /etc/nginx/sites-available/default
 # то, что за решетками, можно удалить
 service nginx restart
 # в /var/www/html положить какой-нибудь скрипт на php и проверить
+# =====================================
+
+# ======== аудио ================
+# включить аудиодрайверы в ядре:
+nano /boot/armbianEnv.txt
+# добавить строку, если нет
+overlays=analog-codec
+# перезагрузить
+# проверка:
+aplay -l
+# должны быть видны все аудиокарты:
+**** List of PLAYBACK Hardware Devices ****
+card 0: Codec [H3 Audio Codec], device 0: CDC PCM Codec-0 []
+  Subdevices: 1/1
+  Subdevice #0: subdevice #0
+
+
+# Распаковать конфигурационный файл MOC
+# Для начала проверить, есть ли в директории пользователя, от которого будет запускаться проигрыватель, скрытая папка .moc, если нет - создать.
+# Потом
+gunzip -c /usr/share/doc/moc/examples/config.example.gz > .moc/config
+
+# Далее его надо отредактировать
+nano .moc/config 
+
+#SoundDriver = JACK:ALSA:OSS - ставим драйвер ALSA
+SoundDriver = ALSA 
+
+ALSADevice = default
+ALSAMixer1 = "Line Out"
+ALSAMixer2 = DAC
+
+ALSAStutterDefeat = no
+
+# для смены картинки при смене песни, скрипт должен быть на месте
+# скрипт требует пакетов (см ниже)
+OnSongChange = "/root/song_change.sh"
+
+# передача картинки на веб-панель
+apt install exiftool imagemagick
+
+
+# Вручную запускаем mocp
+mocp --server; mocp -c -a /music/ -p -v 99 -o r,s
+# В начале стартуем сервер, потом очищаем плейлист, добавляем в него папку /music/, начинаем с первого файла в плейлисте, громкость в 99%, (-o r,s)
+
+
+# скрипт для кронтаба
+/usr/bin/mocp --server; /usr/bin/mocp -c -a /music/ -v 99
+
+
+7. В домашней директории создаем скрипт запуска сервера при старте
+
+nano start_moc.sh
+
+#!/bin/bash
+MUSIC_DIR=/music/ # сюда положить надо хоть что-то, музыку какую-то
+VOLUME=50
+/usr/bin/mocp --server
+/usr/bin/mocp -c -a $MUSIC_DIR -v $VOLUME
+#/usr/bin/mocp -p
+exit 0
+
+chmod +x start_moc.sh
+crontab -e (под рутом)
+добавим строку
+@reboot /root/start_moc.sh
+раскоментируем строку с параметром -p для теста и перезагрузим
+
+# передача картинки на веб-панель
+apt install exiftool imagemagick
+
+
+
 
 
 
