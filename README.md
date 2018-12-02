@@ -135,8 +135,8 @@ crontab -e (под рутом)
 @reboot /root/start_moc.sh
 раскоментируем строку с параметром -p для теста и перезагрузим
 
-# передача картинки на веб-панель
-apt install exiftool imagemagick
+# запуск супервизора для контроля состояния головы и остановки плеера
+apt install exiftool supervisor
 
 
 
